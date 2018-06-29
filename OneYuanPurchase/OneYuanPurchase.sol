@@ -264,12 +264,9 @@ contract LcukyGamble is GambleInfo, Ownable {
     // 记录当前抽奖池中id的数量
     uint256 internal currPoolSize;
     // 中奖者的address与中奖id
-    struct winerInfo{
-        address userAddr;
-        uint256 luckyIds;
-    }
+    
     // 记录中奖者信息
-    winerInfo[] private historyWinerArr;
+    uint32[] private historyWinerId;
     event transfer(address indexed _owner, uint256 _luckyId);
     // 一次性删除所有抽奖id与拥有者address数据
     function disposeAll() external onlyOwner {
@@ -335,6 +332,9 @@ contract LcukyGamble is GambleInfo, Ownable {
         
     }
     
+    // 初始化id池事件
+    event initPoolPushId(uint256 _id);
+
     // 创建抽奖id池，_num一次性创建的数量
     function fillLuckyPool(uint256 _num) public onlyOwner {
         //uint256 numberhistory = historyWinerArr.length;
@@ -362,7 +362,7 @@ contract LcukyGamble is GambleInfo, Ownable {
         if(luckyIdsPool.length > 0){
             ok = true;
             uint256 length = luckyIdsPool.length;
-            uint256 index = uint256(keccak256(msg.sender,historyWinerArr.length)) % length;
+            uint256 index = uint256(keccak256(msg.sender,historyWinerId.length)) % length;
             if (index != length.sub(1)) {
                 uint32 lastLuckyId = luckyIdsPool[length.sub(1)];
                 luckyId = luckyIdsPool[index];
@@ -390,8 +390,8 @@ contract LcukyGamble is GambleInfo, Ownable {
             
             if(poolOverplus() == 0) {
                 uint32 drawId = lotteryDraw();
-                address winer = ownerOf(drawId);
-                historyWinerArr.push(winerInfo(winer,drawId));
+                //address winer = ownerOf(drawId);
+                historyWinerId.push(drawId);
             }
         } else {
             revert();
@@ -400,12 +400,9 @@ contract LcukyGamble is GambleInfo, Ownable {
     }
     // 获取每期的中奖id
     function getWinerLuckyId(uint256 _curva) public view returns(uint256){
-        return historyWinerArr[_curva].luckyIds;
+        return historyWinerId[_curva];
     }
-    // 获取每期的中奖者address
-    function getWiner(uint256 _curva)public view returns(address){
-        return historyWinerArr[_curva].userAddr;
-    }
+    
     // 返回随机的中奖id
     function lotteryDraw() internal view returns(uint32) {
         
