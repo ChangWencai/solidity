@@ -125,11 +125,11 @@ contract BasicGamble {
     using SafeMath for uint256;
     using SafeMath32 for uint32;
     
-    
+    // 抽奖id与地址的映射
     mapping(uint32 => address) internal luckyIdOwner;
     
     //mapping(address => uint256) internal ownedluckIdCount;
-    
+    // 限制抽奖id为拥有者才能调用的函数修饰符
     modifier onlyOwnerOf(uint32 _luckyId) {
         require(ownerOf(_luckyId) == msg.sender);
         _;
@@ -144,33 +144,36 @@ contract BasicGamble {
         return ownedluckIdCount[_owner];
     }
     */
-    function ownerOf(uint32 _luckyId) public view returns (address) {
+
+    // 返回抽奖id的拥有者地址
+    function ownerOf(uint32 _luckyId) public view onlyOwnerOf(_luckyId) returns (address) {
         address owner = luckyIdOwner[_luckyId];
         require(owner != address(0));
         return owner;
     }
-    
+    // 返回抽奖id是否存在
     function exists(uint32 _luckyId) public view returns (bool) {
         address owner = luckyIdOwner[_luckyId];
         return owner != address(0);
     }
-    
+    // 绑定抽奖id与拥有者地址之间的映射关系，并发送createNewLuckyId事件
     function _mint(address _to, uint32 _luckyId) internal {
         require(_to != address(0));
         addLuckyIdTo(_to, _luckyId);
         emit createNewLuckyId(_to,_luckyId);
     }
+    // 将抽奖id与地址的绑定关系添加到关系映射
     function addLuckyIdTo(address _to, uint32 _luckyId) internal {
         require(luckyIdOwner[_luckyId] == address(0));
         luckyIdOwner[_luckyId] =_to;
         //ownedluckIdCount[_to] = ownedluckIdCount[_to].add(1);
     }
-    
+    // 取消抽奖id与拥有者地址之间的绑定关系，并发送destroyOldLuckyId事件
     function _burn(address _owner, uint32 _luckyId) internal {
         removeLuckyIdFrom(_owner, _luckyId);
         emit destroyOldLuckyId(_owner, _luckyId);
     }
-    
+    // 取消抽奖id与拥有者地址之间的绑定关系
     function removeLuckyIdFrom(address _from, uint32 _luckyId) internal {
         require(ownerOf(_luckyId) == _from);
         //ownedluckIdCount[_from] = ownedluckIdCount[_from].sub(1);
@@ -179,41 +182,40 @@ contract BasicGamble {
 }
 
 
-contract luckyInfo is BasicGamble {
+contract GambleInfo is BasicGamble {
     using SafeMath32 for uint32;
     using SafeMath for uint256;
-    
+    // 单一地址所购买的所有id映射
     mapping(address => uint32[]) internal ownedLuckyIds;
-    
+    // 每个抽奖id所对应ownedLuckyIds的下标
     mapping(uint32 => uint32) internal ownedLuckysIndex;
-    
+    // 数组,存储所有的抽奖id
     uint32[] internal allLuckyIds;
-    
+    // 没有抽奖id对应allLuckyIds的下标
     mapping(uint32 => uint32) internal allLuckysIndex;
     
-    /*
+    // 通过下标返回玩家买过的抽奖id
     function luckyOfOwnerByIndex(address _owner, uint256 _index) public view returns(uint256) {
-        require(_index < balanceOf(_owner));
+        require(_index < ownedLuckyIds[_owner].length);
         return ownedLuckyIds[_owner][_index];
     }
-    */
-    
+    // 返回总共出售抽奖id的数量
     function totalSupply() public view returns (uint256) {
         return allLuckyIds.length;
     }
-    
+    // 返回allLuckyIds下标对应的抽奖id
     function luckyIdByIndex(uint256 _index) public view returns (uint32) {
         require(_index < totalSupply());
         return allLuckyIds[_index];
     }
-    
+    // 将抽奖id与购买者地址添加到ownedLuckyIds对应关系
     function addLuckyIdTo(address _to, uint32 _luckyId) internal {
         super.addLuckyIdTo(_to, _luckyId);
         uint32 length = uint32(ownedLuckyIds[_to].length);
         ownedLuckyIds[_to].push(_luckyId);
         ownedLuckysIndex[_luckyId] = length;
     }
-    
+    // 将抽奖id与购买者地址从ownedLuckyIds对应关系上删除
     function removeLuckyIdFrom(address _from, uint32 _luckyId) internal {
         super.removeLuckyIdFrom(_from, _luckyId);
         
@@ -228,14 +230,14 @@ contract luckyInfo is BasicGamble {
         delete ownedLuckysIndex[_luckyId];
         ownedLuckysIndex[uint32(lastLuckyId)] = luckyIdIndex;
     }
-    
+    // 创建新的抽奖id
     function _mint(address _to, uint32 _luckyId) internal {
         super._mint(_to, _luckyId);
         
         allLuckysIndex[_luckyId] = uint32(allLuckyIds.length);
         allLuckyIds.push(uint32(_luckyId));
     }
-    
+    // 删除抽奖id与拥有者之间的关系
     function _burn(address _owner, uint32 _luckyId) internal {
         super._burn(_owner, _luckyId);
         
@@ -254,19 +256,22 @@ contract luckyInfo is BasicGamble {
 }
 
 
-contract LcukyGamble is luckyInfo, Ownable {
+contract LcukyGamble is GambleInfo, Ownable {
     using SafeMath32 for uint32;
     using SafeMath for uint256;
+    // 抽奖id池，每一期抽奖都会刷新
     uint32[] internal luckyIdsPool;
+    // 记录当前抽奖池中id的数量
     uint256 internal currPoolSize;
-    
+    // 中奖者的address与中奖id
     struct winerInfo{
         address userAddr;
         uint256 luckyIds;
     }
+    // 记录中奖者信息
     winerInfo[] private historyWinerArr;
     event transfer(address indexed _owner, uint256 _luckyId);
-    
+    // 一次性删除所有抽奖id与拥有者address数据
     function disposeAll() external onlyOwner {
         //require(totalSupply() > 0);
         //require(pooloverplus() == 0);
@@ -301,6 +306,7 @@ contract LcukyGamble is luckyInfo, Ownable {
             
         }
     }
+    // 单次删除单个抽奖id与拥有者的信息
     function disposeById(uint32 _luckyId,address _from) external onlyOwner {
         require(ownerOf(_luckyId) == _from);
         delete luckyIdOwner[_luckyId];
@@ -329,16 +335,7 @@ contract LcukyGamble is luckyInfo, Ownable {
         
     }
     
-    
-    
-    function removeLuckyIdFrom(uint32 _luckyId, address _owner) external onlyOwner{
-        super.removeLuckyIdFrom(_owner, _luckyId);
-    }
-    function burn(uint32 _luckyId, address _owner) external onlyOwner{
-        super._burn(_owner, _luckyId);
-    }
-    
-    
+    // 创建抽奖id池，_num一次性创建的数量
     function fillLuckyPool(uint256 _num) public onlyOwner {
         //uint256 numberhistory = historyWinerArr.length;
         require(poolOverplus() == 0);
@@ -354,13 +351,13 @@ contract LcukyGamble is luckyInfo, Ownable {
     }
     
     
-    
+    // 返回当前抽奖池中还剩余的id数量
     function poolOverplus() public view returns(uint256) {
         return luckyIdsPool.length;
     }
     
     
-    
+    // 当玩家购买抽奖id时，随机从抽奖池中获取一个id
     function randomAlgorithm() internal returns(uint32 luckyId,bool ok) {
         if(luckyIdsPool.length > 0){
             ok = true;
@@ -382,6 +379,7 @@ contract LcukyGamble is luckyInfo, Ownable {
         }
     }
     
+    // 购买抽奖id
     function buyLuckyId() checkDataOk() public payable {
         uint32 luckyid;
         bool ok;
@@ -400,14 +398,15 @@ contract LcukyGamble is luckyInfo, Ownable {
         }
         
     }
-    
+    // 获取每期的中奖id
     function getWinerLuckyId(uint256 _curva) public view returns(uint256){
         return historyWinerArr[_curva].luckyIds;
     }
+    // 获取每期的中奖者address
     function getWiner(uint256 _curva)public view returns(address){
         return historyWinerArr[_curva].userAddr;
     }
-    
+    // 返回随机的中奖id
     function lotteryDraw() internal view returns(uint32) {
         
         uint256 number = totalSupply() - currPoolSize;
@@ -417,7 +416,7 @@ contract LcukyGamble is luckyInfo, Ownable {
         return uint32((winerId % currPoolSize).add(10000).add(number));
         
     }
-    
+    // hash种子
     function whatNumberOfAllAddress() internal view returns(uint256) {
         uint256 length = allLuckyIds.length;
         uint256 temp = 0;
@@ -427,26 +426,31 @@ contract LcukyGamble is luckyInfo, Ownable {
         }
         return temp;
     }
-    
-    function _createLuckyId(address _owner, uint32 _luckyId) internal{
-        super._mint(_owner,_luckyId);
+    // 将创建id函数在子类私有化
+    function _createLuckyId(address _to, uint32 _luckyId) private{
+        super._mint(_to,_luckyId);
+        
+        uint32 length = uint32(ownedLuckyIds[_to].length);
+        ownedLuckyIds[_to].push(_luckyId);
+        ownedLuckysIndex[_luckyId] = length;
     }
-    
+    // 构造函数
     function LcukyGamble() public{
         owner = msg.sender;
         //totalOfOnePool = 100;
     }
-    
+    // 检查玩家发送过来的ether
     modifier checkDataOk() {
         uint256 temp = 0.01 ether;
         require(msg.value == temp);
         //require(msg.value % temp == 0);
         _;
     }
+    // fallback函数
     function() internal payable {
         revert();
     }
-    
+    // 销毁合约
     function kill() external onlyOwner{
        if (owner == msg.sender) { // 检查谁在调用
           selfdestruct(owner); // 销毁合约
