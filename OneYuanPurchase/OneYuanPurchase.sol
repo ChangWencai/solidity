@@ -85,49 +85,6 @@ library SafeMath32 {
     return c;
   }
 }
-
-library SafeMath16 {
-
-  /**
-  * @dev Multiplies two numbers, throws on overflow.
-  */
-  function mul(uint16 a, uint16 b) internal pure returns (uint16) {
-    if (a == 0) {
-      return 0;
-    }
-    uint16 c = a * b;
-    assert(c / a == b);
-    return c;
-  }
-
-  /**
-  * @dev Integer division of two numbers, truncating the quotient.
-  */
-  function div(uint16 a, uint16 b) internal pure returns (uint16) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint16 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return c;
-  }
-
-  /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-  */
-  function sub(uint16 a, uint16 b) internal pure returns (uint16) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  /**
-  * @dev Adds two numbers, throws on overflow.
-  */
-  function add(uint16 a, uint16 b) internal pure returns (uint16) {
-    uint16 c = a + b;
-    assert(c >= a);
-    return c;
-  }
-}
-
   
 contract Ownable {
   address public owner;
@@ -166,14 +123,14 @@ contract Ownable {
 
 contract BasicGamble {
     using SafeMath for uint256;
-    using SafeMath16 for uint16;
+    using SafeMath32 for uint32;
     
     
-    mapping(uint16 => address) internal luckyIdOwner;
+    mapping(uint32 => address) internal luckyIdOwner;
     
     //mapping(address => uint256) internal ownedluckIdCount;
     
-    modifier onlyOwnerOf(uint16 _luckyId) {
+    modifier onlyOwnerOf(uint32 _luckyId) {
         require(ownerOf(_luckyId) == msg.sender);
         _;
     }
@@ -187,34 +144,34 @@ contract BasicGamble {
         return ownedluckIdCount[_owner];
     }
     */
-    function ownerOf(uint16 _luckyId) public view returns (address) {
+    function ownerOf(uint32 _luckyId) public view returns (address) {
         address owner = luckyIdOwner[_luckyId];
         require(owner != address(0));
         return owner;
     }
     
-    function exists(uint16 _luckyId) public view returns (bool) {
+    function exists(uint32 _luckyId) public view returns (bool) {
         address owner = luckyIdOwner[_luckyId];
         return owner != address(0);
     }
     
-    function _mint(address _to, uint16 _luckyId) internal {
+    function _mint(address _to, uint32 _luckyId) internal {
         require(_to != address(0));
         addLuckyIdTo(_to, _luckyId);
         emit createNewLuckyId(_to,_luckyId);
     }
-    function addLuckyIdTo(address _to, uint16 _luckyId) internal {
+    function addLuckyIdTo(address _to, uint32 _luckyId) internal {
         require(luckyIdOwner[_luckyId] == address(0));
         luckyIdOwner[_luckyId] =_to;
         //ownedluckIdCount[_to] = ownedluckIdCount[_to].add(1);
     }
     
-    function _burn(address _owner, uint16 _luckyId) internal {
+    function _burn(address _owner, uint32 _luckyId) internal {
         removeLuckyIdFrom(_owner, _luckyId);
         emit destroyOldLuckyId(_owner, _luckyId);
     }
     
-    function removeLuckyIdFrom(address _from, uint16 _luckyId) internal {
+    function removeLuckyIdFrom(address _from, uint32 _luckyId) internal {
         require(ownerOf(_luckyId) == _from);
         //ownedluckIdCount[_from] = ownedluckIdCount[_from].sub(1);
         delete luckyIdOwner[_luckyId];
@@ -223,16 +180,16 @@ contract BasicGamble {
 
 
 contract luckyInfo is BasicGamble {
-    using SafeMath16 for uint16;
+    using SafeMath32 for uint32;
     using SafeMath for uint256;
     
-    mapping(address => uint16[]) internal ownedLuckyIds;
+    mapping(address => uint32[]) internal ownedLuckyIds;
     
-    mapping(uint16 => uint16) internal ownedLuckysIndex;
+    mapping(uint32 => uint32) internal ownedLuckysIndex;
     
-    uint16[] internal allLuckyIds;
+    uint32[] internal allLuckyIds;
     
-    mapping(uint16 => uint16) internal allLuckysIndex;
+    mapping(uint32 => uint32) internal allLuckysIndex;
     
     /*
     function luckyOfOwnerByIndex(address _owner, uint256 _index) public view returns(uint256) {
@@ -245,46 +202,46 @@ contract luckyInfo is BasicGamble {
         return allLuckyIds.length;
     }
     
-    function luckyIdByIndex(uint256 _index) public view returns (uint16) {
+    function luckyIdByIndex(uint256 _index) public view returns (uint32) {
         require(_index < totalSupply());
         return allLuckyIds[_index];
     }
     
-    function addLuckyIdTo(address _to, uint16 _luckyId) internal {
+    function addLuckyIdTo(address _to, uint32 _luckyId) internal {
         super.addLuckyIdTo(_to, _luckyId);
-        uint16 length = uint16(ownedLuckyIds[_to].length);
+        uint32 length = uint32(ownedLuckyIds[_to].length);
         ownedLuckyIds[_to].push(_luckyId);
         ownedLuckysIndex[_luckyId] = length;
     }
     
-    function removeLuckyIdFrom(address _from, uint16 _luckyId) internal {
+    function removeLuckyIdFrom(address _from, uint32 _luckyId) internal {
         super.removeLuckyIdFrom(_from, _luckyId);
         
-        uint16 luckyIdIndex = ownedLuckysIndex[_luckyId];
+        uint32 luckyIdIndex = ownedLuckysIndex[_luckyId];
         uint256 lastLuckyIdIndex = ownedLuckyIds[_from].length.sub(1);
-        uint16 lastLuckyId = ownedLuckyIds[_from][lastLuckyIdIndex];
+        uint32 lastLuckyId = ownedLuckyIds[_from][lastLuckyIdIndex];
         
         ownedLuckyIds[_from][luckyIdIndex] = lastLuckyId;
         delete ownedLuckyIds[_from][lastLuckyIdIndex];
         
         ownedLuckyIds[_from].length--;
         delete ownedLuckysIndex[_luckyId];
-        ownedLuckysIndex[uint16(lastLuckyId)] = luckyIdIndex;
+        ownedLuckysIndex[uint32(lastLuckyId)] = luckyIdIndex;
     }
     
-    function _mint(address _to, uint16 _luckyId) internal {
+    function _mint(address _to, uint32 _luckyId) internal {
         super._mint(_to, _luckyId);
         
-        allLuckysIndex[_luckyId] = uint16(allLuckyIds.length);
-        allLuckyIds.push(uint16(_luckyId));
+        allLuckysIndex[_luckyId] = uint32(allLuckyIds.length);
+        allLuckyIds.push(uint32(_luckyId));
     }
     
-    function _burn(address _owner, uint16 _luckyId) internal {
+    function _burn(address _owner, uint32 _luckyId) internal {
         super._burn(_owner, _luckyId);
         
-        uint16 luckyIdIndex = allLuckysIndex[_luckyId];
+        uint32 luckyIdIndex = allLuckysIndex[_luckyId];
         uint256 lastLuckyIdIndex = allLuckyIds.length.sub(1);
-        uint16 lastLuckyId = allLuckyIds[lastLuckyIdIndex];
+        uint32 lastLuckyId = allLuckyIds[lastLuckyIdIndex];
         
         allLuckyIds[luckyIdIndex] = lastLuckyId;
         delete allLuckyIds[lastLuckyIdIndex];
@@ -298,9 +255,9 @@ contract luckyInfo is BasicGamble {
 
 
 contract LcukyGamble is luckyInfo, Ownable {
-    using SafeMath16 for uint16;
+    using SafeMath32 for uint32;
     using SafeMath for uint256;
-    uint16[] internal luckyIdsPool;
+    uint32[] internal luckyIdsPool;
     uint256 internal currPoolSize;
     
     struct winerInfo{
@@ -310,30 +267,30 @@ contract LcukyGamble is luckyInfo, Ownable {
     winerInfo[] private historyWinerArr;
     event transfer(address indexed _owner, uint256 _luckyId);
     
-    function dispose() public onlyOwner {
+    function disposeAll() external onlyOwner {
         //require(totalSupply() > 0);
         //require(pooloverplus() == 0);
         uint256 length = totalSupply();
         for (uint256 i = length.sub(1); i >= 0; i--) {
-            uint16 _luckyid = allLuckyIds[i];
+            uint32 _luckyid = allLuckyIds[i];
             
             address _owner = luckyIdOwner[_luckyid];
             
             delete luckyIdOwner[_luckyid];
             
-            uint16 luckyIdIndex = ownedLuckysIndex[_luckyid];
+            uint32 luckyIdIndex = ownedLuckysIndex[_luckyid];
             uint256 lastLuckyIdIndex = ownedLuckyIds[_owner].length.sub(1);
-            uint16 lastLuckyId = ownedLuckyIds[_owner][lastLuckyIdIndex];
+            uint32 lastLuckyId = ownedLuckyIds[_owner][lastLuckyIdIndex];
             
             ownedLuckyIds[_owner][luckyIdIndex] = lastLuckyId;
             delete ownedLuckyIds[_owner][lastLuckyIdIndex];
             ownedLuckyIds[_owner].length--;
             delete ownedLuckysIndex[_luckyid];
-            ownedLuckysIndex[uint16(lastLuckyId)] = luckyIdIndex;
+            ownedLuckysIndex[uint32(lastLuckyId)] = luckyIdIndex;
             
-            uint16 AllLuckyIdIndex = allLuckysIndex[_luckyid];
+            uint32 AllLuckyIdIndex = allLuckysIndex[_luckyid];
             uint256 lastAllLuckyIdIndex = allLuckyIds.length.sub(1);
-            uint16 lastAllLuckyId = allLuckyIds[lastAllLuckyIdIndex];
+            uint32 lastAllLuckyId = allLuckyIds[lastAllLuckyIdIndex];
             
             allLuckyIds[AllLuckyIdIndex] = lastAllLuckyId;
             delete allLuckyIds[lastAllLuckyIdIndex];
@@ -344,24 +301,24 @@ contract LcukyGamble is luckyInfo, Ownable {
             
         }
     }
-    function dispose_by(uint16 _luckyId,address _from) external onlyOwner {
+    function disposeById(uint32 _luckyId,address _from) external onlyOwner {
         require(ownerOf(_luckyId) == _from);
         delete luckyIdOwner[_luckyId];
         
-        uint16 luckyIdIndex = ownedLuckysIndex[_luckyId];
+        uint32 luckyIdIndex = ownedLuckysIndex[_luckyId];
         uint256 lastLuckyIdIndex = ownedLuckyIds[_from].length.sub(1);
-        uint16 lastLuckyId = ownedLuckyIds[_from][lastLuckyIdIndex];
+        uint32 lastLuckyId = ownedLuckyIds[_from][lastLuckyIdIndex];
         
         ownedLuckyIds[_from][luckyIdIndex] = lastLuckyId;
         delete ownedLuckyIds[_from][lastLuckyIdIndex];
         
         ownedLuckyIds[_from].length--;
         delete ownedLuckysIndex[_luckyId];
-        ownedLuckysIndex[uint16(lastLuckyId)] = luckyIdIndex;
+        ownedLuckysIndex[uint32(lastLuckyId)] = luckyIdIndex;
         
-        uint16 aluckyIdIndex = allLuckysIndex[_luckyId];
+        uint32 aluckyIdIndex = allLuckysIndex[_luckyId];
         uint256 alastLuckyIdIndex = allLuckyIds.length.sub(1);
-        uint16 alastLuckyId = allLuckyIds[alastLuckyIdIndex];
+        uint32 alastLuckyId = allLuckyIds[alastLuckyIdIndex];
         
         allLuckyIds[aluckyIdIndex] = alastLuckyId;
         delete allLuckyIds[alastLuckyIdIndex];
@@ -374,10 +331,10 @@ contract LcukyGamble is luckyInfo, Ownable {
     
     
     
-    function removeLuckyIdFrom(uint16 _luckyId, address _owner) external {
+    function removeLuckyIdFrom(uint32 _luckyId, address _owner) external onlyOwner{
         super.removeLuckyIdFrom(_owner, _luckyId);
     }
-    function burn(uint16 _luckyId, address _owner) external {
+    function burn(uint32 _luckyId, address _owner) external onlyOwner{
         super._burn(_owner, _luckyId);
     }
     
@@ -385,13 +342,13 @@ contract LcukyGamble is luckyInfo, Ownable {
     function fillLuckyPool(uint256 _num) public onlyOwner {
         //uint256 numberhistory = historyWinerArr.length;
         require(poolOverplus() == 0);
-        luckyIdsPool = new uint16[](_num);
+        luckyIdsPool = new uint32[](_num);
         currPoolSize = _num;
         luckyIdsPool.length = _num;
         uint256 total = totalSupply();
         for(uint256 i = 0; i < _num; i++) {
             //luckyIdsPool.push(i.add(10000).add(numberhistory.mul(totalOfOnePool)));
-            luckyIdsPool[i] = uint16(i.add(10000).add(total));
+            luckyIdsPool[i] = uint32(i.add(10000).add(total));
             emit createNewLuckyId(msg.sender, i.add(10000).add(total));
         }
     }
@@ -404,14 +361,13 @@ contract LcukyGamble is luckyInfo, Ownable {
     
     
     
-    function randomAlgorithm() internal returns(uint16 luckyId,bool ok) {
-        //emit luckyIdsPool_lenhth(luckyIdsPool.length);
+    function randomAlgorithm() internal returns(uint32 luckyId,bool ok) {
         if(luckyIdsPool.length > 0){
             ok = true;
             uint256 length = luckyIdsPool.length;
             uint256 index = uint256(keccak256(msg.sender,historyWinerArr.length)) % length;
             if (index != length.sub(1)) {
-                uint16 lastLuckyId = luckyIdsPool[length.sub(1)];
+                uint32 lastLuckyId = luckyIdsPool[length.sub(1)];
                 luckyId = luckyIdsPool[index];
                 luckyIdsPool[index] = lastLuckyId;
                 
@@ -427,7 +383,7 @@ contract LcukyGamble is luckyInfo, Ownable {
     }
     
     function buyLuckyId() checkDataOk() public payable {
-        uint16 luckyid;
+        uint32 luckyid;
         bool ok;
         
         (luckyid, ok) = randomAlgorithm();
@@ -435,8 +391,9 @@ contract LcukyGamble is luckyInfo, Ownable {
             _createLuckyId(msg.sender,luckyid);
             
             if(poolOverplus() == 0) {
-                uint256 drawId = lotteryDraw();
-                historyWinerArr.push(winerInfo(msg.sender,drawId));
+                uint32 drawId = lotteryDraw();
+                address winer = ownerOf(drawId);
+                historyWinerArr.push(winerInfo(winer,drawId));
             }
         } else {
             revert();
@@ -447,14 +404,17 @@ contract LcukyGamble is luckyInfo, Ownable {
     function getWinerLuckyId(uint256 _curva) public view returns(uint256){
         return historyWinerArr[_curva].luckyIds;
     }
+    function getWiner(uint256 _curva)public view returns(address){
+        return historyWinerArr[_curva].userAddr;
+    }
     
-    function lotteryDraw() internal view returns(uint256) {
+    function lotteryDraw() internal view returns(uint32) {
         
-        //uint256 number = totalSupply() - currPoolSize;
+        uint256 number = totalSupply() - currPoolSize;
         uint256 whatNumber = whatNumberOfAllAddress();
         uint256 winerId = (uint256(keccak256(whatNumber)));
         
-        return (winerId % currPoolSize).add(10000);
+        return uint32((winerId % currPoolSize).add(10000).add(number));
         
     }
     
@@ -462,13 +422,13 @@ contract LcukyGamble is luckyInfo, Ownable {
         uint256 length = allLuckyIds.length;
         uint256 temp = 0;
         for(uint256 i = 0; i < length; i++){
-            uint16 luckyId = allLuckyIds[i];
+            uint32 luckyId = allLuckyIds[i];
             temp = temp.add(uint256(luckyIdOwner[luckyId]));
         }
         return temp;
     }
     
-    function _createLuckyId(address _owner, uint16 _luckyId) internal{
+    function _createLuckyId(address _owner, uint32 _luckyId) internal{
         super._mint(_owner,_luckyId);
     }
     
