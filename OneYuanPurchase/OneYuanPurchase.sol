@@ -185,6 +185,7 @@ contract BasicGamble {
 contract GambleInfo is BasicGamble {
     using SafeMath32 for uint32;
     using SafeMath for uint256;
+    
     // 单一地址所购买的所有id映射
     mapping(address => uint32[]) internal ownedLuckyIds;
     // 每个抽奖id所对应ownedLuckyIds的下标
@@ -230,7 +231,7 @@ contract GambleInfo is BasicGamble {
         delete ownedLuckysIndex[_luckyId];
         ownedLuckysIndex[uint32(lastLuckyId)] = luckyIdIndex;
     }
-    // 创建新的抽奖id
+    // 将抽奖id与购买者建立绑定关系
     function _mint(address _to, uint32 _luckyId) internal {
         super._mint(_to, _luckyId);
         
@@ -270,38 +271,18 @@ contract LcukyGamble is GambleInfo, Ownable {
     event transfer(address indexed _owner, uint256 _luckyId);
     // 一次性删除所有抽奖id与拥有者address数据
     function disposeAll() external onlyOwner {
-        //require(totalSupply() > 0);
-        //require(pooloverplus() == 0);
-        uint256 length = totalSupply();
-        for (uint256 i = length.sub(1); i >= 0; i--) {
-            uint32 _luckyid = allLuckyIds[i];
-            
-            address _owner = luckyIdOwner[_luckyid];
-            
-            delete luckyIdOwner[_luckyid];
-            
-            uint32 luckyIdIndex = ownedLuckysIndex[_luckyid];
-            uint256 lastLuckyIdIndex = ownedLuckyIds[_owner].length.sub(1);
-            uint32 lastLuckyId = ownedLuckyIds[_owner][lastLuckyIdIndex];
-            
-            ownedLuckyIds[_owner][luckyIdIndex] = lastLuckyId;
-            delete ownedLuckyIds[_owner][lastLuckyIdIndex];
-            ownedLuckyIds[_owner].length--;
-            delete ownedLuckysIndex[_luckyid];
-            ownedLuckysIndex[uint32(lastLuckyId)] = luckyIdIndex;
-            
-            uint32 AllLuckyIdIndex = allLuckysIndex[_luckyid];
-            uint256 lastAllLuckyIdIndex = allLuckyIds.length.sub(1);
-            uint32 lastAllLuckyId = allLuckyIds[lastAllLuckyIdIndex];
-            
-            allLuckyIds[AllLuckyIdIndex] = lastAllLuckyId;
-            delete allLuckyIds[lastAllLuckyIdIndex];
-            
-            allLuckyIds.length--;
-            delete allLuckysIndex[_luckyid];
-            allLuckysIndex[lastAllLuckyId] = AllLuckyIdIndex;
-            
-        }
+        
+        uint32 length = uint32(totalSupply());
+        
+        uint32 beginId = 10000;
+        uint32 endId = beginId.add(length);
+        
+        for(uint32 i = beginId; i < endId; i++){
+            if ( exists(i)){
+                address owner = ownerOf(i);
+                this.disposeById(i,owner);
+            }
+        }  
     }
     // 单次删除单个抽奖id与拥有者的信息
     function disposeById(uint32 _luckyId,address _from) external onlyOwner {
