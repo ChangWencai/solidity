@@ -146,7 +146,7 @@ contract BasicGamble {
     */
 
     // 返回抽奖id的拥有者地址
-    function ownerOf(uint32 _luckyId) public view onlyOwnerOf(_luckyId) returns (address) {
+    function ownerOf(uint32 _luckyId) public view  returns (address) {
         address owner = luckyIdOwner[_luckyId];
         require(owner != address(0));
         return owner;
@@ -185,7 +185,7 @@ contract BasicGamble {
 contract GambleInfo is BasicGamble {
     using SafeMath32 for uint32;
     using SafeMath for uint256;
-    
+
     // 单一地址所购买的所有id映射
     mapping(address => uint32[]) internal ownedLuckyIds;
     // 每个抽奖id所对应ownedLuckyIds的下标
@@ -270,22 +270,23 @@ contract LcukyGamble is GambleInfo, Ownable {
     uint32[] private historyWinerId;
     event transfer(address indexed _owner, uint256 _luckyId);
     // 一次性删除所有抽奖id与拥有者address数据
-    function disposeAll() external onlyOwner {
+    function disposeAll(uint32 _begin, uint32 _end) public onlyOwner {
         
-        uint32 length = uint32(totalSupply());
+        //uint32 length = uint32(totalSupply());
         
-        uint32 beginId = 10000;
-        uint32 endId = beginId.add(length);
+        uint32 beginId = _begin;
+        uint32 endId = _end;
         
         for(uint32 i = beginId; i < endId; i++){
             if ( exists(i)){
                 address owner = ownerOf(i);
-                this.disposeById(i,owner);
+                disposeById(i,owner);
             }
-        }  
+        }
+        delete historyWinerId;
     }
     // 单次删除单个抽奖id与拥有者的信息
-    function disposeById(uint32 _luckyId,address _from) external onlyOwner {
+    function disposeById(uint32 _luckyId,address _from) public onlyOwner {
         require(ownerOf(_luckyId) == _from);
         delete luckyIdOwner[_luckyId];
         
@@ -327,7 +328,7 @@ contract LcukyGamble is GambleInfo, Ownable {
         for(uint256 i = 0; i < _num; i++) {
             //luckyIdsPool.push(i.add(10000).add(numberhistory.mul(totalOfOnePool)));
             luckyIdsPool[i] = uint32(i.add(10000).add(total));
-            emit createNewLuckyId(msg.sender, i.add(10000).add(total));
+            emit initPoolPushId( i.add(10000).add(total));
         }
     }
     
