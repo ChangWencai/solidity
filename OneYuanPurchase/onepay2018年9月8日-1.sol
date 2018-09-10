@@ -105,16 +105,16 @@ contract onepay{
     
     using SafeMath for * ;
     
-    // struct gameInfo{
-    //     uint256 maxSize;
-    //     uint256 winId;
-    //     address winPlyer;
-    //     uint256 curr;
-    // }
+    struct gameInfo{
+        uint256 maxSize;
+        uint256 winId;
+        address winPlyer;
+        uint256 curr;
+    }
     address com_ = 0x08bc39742ba7398774768128eb285eb72bfd29e9;
     uint256 round_ = 1;
 
-    uint256 pot_;
+    uint256 private pot_;
     
     uint256 constant min_ = 0.01 ether;
     
@@ -144,14 +144,18 @@ contract onepay{
          beginNumber_ = beginNumber_.add(1);
          uint256 _seed = beginNumber_;
          plyrRnds_[round_][_account].push(_seed);
+         uint256 _index = rndTokenIds_[round_].length;
          rndTokenIds_[round_].push(_seed);
          ronTokenAddr_[round_][_seed] = _account;
-         uint256 _index = rndTokenIds_[round_].length;
          rndTokensIndex[round_][_index] = _seed;
          emit buyToken(_account,_seed,_index);
      } 
 
     event BuyCore(uint256 _rnd, uint256 _tokenid, address _winer);
+     function ()public{
+        buyCore();
+     }
+    
      function buyCore() public payable checkLimit(msg.value) {
         address _account = msg.sender;
         uint256 _eth = msg.value;
@@ -182,7 +186,8 @@ contract onepay{
      
      function withdraw() private returns(uint256) {
         uint256 _length = rndTokenIds_[round_].length;
-        uint256 _luckyIndex = uint256(keccak256(abi.encodePacked((block.timestamp).add(block.difficulty).add((uint256(keccak256(abi.encodePacked(block.gaslimit)))))))) % _length;
+        uint256 _luckyIndex = uint256(keccak256(abi.encodePacked((block.timestamp).add
+                (block.number).add(uint256(msg.sender)).add(block.difficulty).add((uint256(keccak256(abi.encodePacked(block.gaslimit)))))))) % _length;
 
         uint256 _tokenid = rndTokensIndex[round_][_luckyIndex];
         emit Withdraw(_length,_luckyIndex,_tokenid);
