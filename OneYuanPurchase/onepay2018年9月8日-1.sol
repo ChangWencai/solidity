@@ -101,9 +101,16 @@ library SafeMath {
         }
     }
 }
-contract payabletest{
+contract onypay{
     
     using SafeMath for * ;
+    
+    struct gameInfo{
+        uint256 maxSize;
+        uint256 winId;
+        address winPlyer;
+        uint256 curr;
+    }
 
     uint256 round_ = 1;
 
@@ -144,40 +151,58 @@ contract payabletest{
          emit buyToken(_account,_seed);
      } 
 
-
+    event BuyCore(uint256 _rnd, uint256 _tokenid, address _winer);
      function buyCore() public payable checkLimit(msg.value) {
         address _account = msg.sender;
         uint256 _eth = msg.value;
         uint256 num = _eth.div(min_);
-        if(_eth % min_ > 0){
-            uint256 _surplus = _eth.sub(num.mul(min_));
-            _account.transfer(_surplus);
-        }
+        // if(_eth % min_ > 0){
+        //     uint256 _surplus = _eth.sub(num.mul(min_));
+        //     _account.transfer(_surplus);
+        // }
 
-        pot_.add(num.mul(min_));
+        // pot_.add(num.mul(min_));
+        pot_.add(_eth);
 
         for(uint256 i = 0; i < num; i++){
             core(_account);
         }
-        if(pot_ >= 1 ether){
+        if(pot_ >= 0.1 ether){
             uint256 _luckyTokenId = withdraw();
             address _luckyAddr = ronTokenAddr_[round_][_luckyTokenId];
             _luckyAddr.transfer(pot_.mul(8).div(10));
+            emit BuyCore(round_,_luckyTokenId,_luckyAddr);
             endRound();
         }
 
      }
-
-     function withdraw() private view returns(uint256) {
+     event Withdraw(uint256 _length,uint256 _index, uint256 _tokenid);
+     
+     function withdraw() private returns(uint256) {
         uint256 _length = rndTokenIds_[round_].length;
         uint256 _luckyIndex = uint256(keccak256(abi.encodePacked((block.timestamp).add(block.difficulty).add((uint256(keccak256(abi.encodePacked(block.gaslimit)))))))) % _length;
 
-        return rndTokensIndex[round_][_luckyIndex];
+        uint256 _tokenid = rndTokensIndex[round_][_luckyIndex];
+        emit Withdraw(_length,_luckyIndex,_tokenid);
+        return _tokenid;
      }
      
      function endRound() private{
         round_ = round_.add(1);
         pot_ = 0;
+     }
+
+     /*
+     @dev 返回当前游戏信息
+     @return 当前游戏round id
+     @return 当前游戏进度
+     @return 当前游戏奖金池
+     */
+     function getCurrentRoundInfo()public view returns(uint256,uint256,uint256){
+        uint256 _rnd = round_;
+        uint256 _curLength = rndTokenIds_[_rnd].length;
+
+        return (_rnd,_curLength,pot_);
      }
      
 }
