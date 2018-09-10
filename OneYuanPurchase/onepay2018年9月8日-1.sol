@@ -103,28 +103,27 @@ library SafeMath {
 }
 contract payabletest{
     
-    using SafeMath from *;
+    using SafeMath for * ;
 
     uint256 round_ = 1;
 
-    uint256 pot;
+    uint256 pot_;
     
-    uint256 min_ = 0.01 ether;
-    
-    uint256 private percent_ = 80;
+    uint256 constant min_ = 0.01 ether;
     
     mapping(uint256 => mapping(address => uint256[])) plyrRnds_; // round => plyr => ownTokens
     
     mapping(uint256 => uint256[]) rndTokenIds_;    // round => tokens
+    mapping(uint256 => mapping(uint256 => uint256)) rndTokensIndex; // rount => tokenid => index
 
     mapping(uint256 => mapping(uint256 => address)) ronTokenAddr_;  // rount => tokenid => address
 
     address owner;
     
-    uint256 beginNumber_ = 10000;
+    uint256 private beginNumber_ = 10000;
     
     modifier checkLimit(uint256 _eth){
-        require(_eth >= min);
+        require(_eth >= min_);
         _;
     }
     
@@ -140,11 +139,13 @@ contract payabletest{
          plyrRnds_[round_][_account].push(_seed);
          rndTokenIds_[round_].push(_seed);
          ronTokenAddr_[round_][_seed] = _account;
+         uint256 _length = rndTokenIds_[round_].length;
+         rndTokensIndex[round_][_length] = _seed;
          emit buyToken(_account,_seed);
      } 
 
 
-     function buyCore() public checkLimit(msg.value) {
+     function buyCore() public payable checkLimit(msg.value) {
         address _account = msg.sender;
         uint256 _eth = msg.value;
         uint256 num = _eth.div(min_);
@@ -153,26 +154,30 @@ contract payabletest{
             _account.transfer(_surplus);
         }
 
-        pot.add(num.mul(min_));
+        pot_.add(num.mul(min_));
 
         for(uint256 i = 0; i < num; i++){
             core(_account);
         }
-        if(pot >= 1 ether){
-            
+        if(pot_ >= 1 ether){
+            uint256 _luckyTokenId = withdraw();
+            address _luckyAddr = ronTokenAddr_[round_][_luckyTokenId];
+            _luckyAddr.transfer(pot_.mul(8).div(10));
+            endRound();
         }
 
      }
 
-     function withdraw() private returns(uint256) {
+     function withdraw() private view returns(uint256) {
         uint256 _length = rndTokenIds_[round_].length;
-        uint256 _luckyid = uint256(keccak256(abi.encodePacked((block.timestamp).add(block.difficulty).add((uint256(keccak256(abi.encodePacked(block.gaslimit)))) % _length;
+        uint256 _luckyIndex = uint256(keccak256(abi.encodePacked((block.timestamp).add(block.difficulty).add((uint256(keccak256(abi.encodePacked(block.gaslimit)))))))) % _length;
 
+        return rndTokensIndex[round_][_luckyIndex];
      }
      
      function endRound() private{
         round_ = round_.add(1);
-        pot = 0;
+        pot_ = 0;
      }
      
 }
