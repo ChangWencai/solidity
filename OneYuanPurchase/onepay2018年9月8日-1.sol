@@ -105,12 +105,12 @@ contract onepay{
     
     using SafeMath for * ;
     
-    struct gameInfo{
-        uint256 maxSize;
-        uint256 winId;
-        address winPlyer;
-        uint256 curr;
-    }
+    // struct gameInfo{
+    //     uint256 maxSize;
+    //     uint256 winId;
+    //     address winPlyer;
+    //     uint256 curr;
+    // }
     address com_ = 0x08bc39742ba7398774768128eb285eb72bfd29e9;
     uint256 round_ = 1;
 
@@ -138,7 +138,7 @@ contract onepay{
          owner = msg.sender;
      }
      
-     event buyToken(address _from, uint256 _tokenid);
+     event buyToken(address _from, uint256 _tokenid,uint256 _index);
 
      function core(address _account) private  {
          beginNumber_ = beginNumber_.add(1);
@@ -146,9 +146,9 @@ contract onepay{
          plyrRnds_[round_][_account].push(_seed);
          rndTokenIds_[round_].push(_seed);
          ronTokenAddr_[round_][_seed] = _account;
-         uint256 _length = rndTokenIds_[round_].length;
-         rndTokensIndex[round_][_length] = _seed;
-         emit buyToken(_account,_seed);
+         uint256 _index = rndTokenIds_[round_].length;
+         rndTokensIndex[round_][_index] = _seed;
+         emit buyToken(_account,_seed,_index);
      } 
 
     event BuyCore(uint256 _rnd, uint256 _tokenid, address _winer);
@@ -156,13 +156,13 @@ contract onepay{
         address _account = msg.sender;
         uint256 _eth = msg.value;
         uint256 num = _eth.div(min_);
-        // if(_eth % min_ > 0){
-        //     uint256 _surplus = _eth.sub(num.mul(min_));
-        //     _account.transfer(_surplus);
-        // }
+        if(_eth % min_ > 0){
+            uint256 _surplus = _eth.sub(num.mul(min_));
+            _account.transfer(_surplus);
+        }
 
-        // pot_.add(num.mul(min_));
-        pot_ = pot_.add(_eth);
+        pot_ = pot_.add(num.mul(min_));
+        // pot_ = pot_.add(_eth);
 
         for(uint256 i = 0; i < num; i++){
             core(_account);
@@ -209,8 +209,8 @@ contract onepay{
         return (_rnd,_curLength,pot_);
      }
      
-     function getplyrTokenIdByAdde(address _plyer)view public returns(uint256[]) {
-         return plyrRnds_[round_][_plyer];
+     function getplyrTokenIdByAdde(uint256 _rnd,address _plyer)view public returns(uint256[]) {
+         return plyrRnds_[_rnd][_plyer];
      }
      
 }
