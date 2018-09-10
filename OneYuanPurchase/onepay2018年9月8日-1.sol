@@ -162,7 +162,7 @@ contract onepay{
         // }
 
         // pot_.add(num.mul(min_));
-        pot_.add(_eth);
+        pot_ = pot_.add(_eth);
 
         for(uint256 i = 0; i < num; i++){
             core(_account);
