@@ -101,7 +101,7 @@ library SafeMath {
         }
     }
 }
-contract onypay{
+contract onepay{
     
     using SafeMath for * ;
     
@@ -111,7 +111,7 @@ contract onypay{
         address winPlyer;
         uint256 curr;
     }
-
+    address com_ = 0x08bc39742ba7398774768128eb285eb72bfd29e9;
     uint256 round_ = 1;
 
     uint256 pot_;
@@ -171,6 +171,8 @@ contract onypay{
             uint256 _luckyTokenId = withdraw();
             address _luckyAddr = ronTokenAddr_[round_][_luckyTokenId];
             _luckyAddr.transfer(pot_.mul(8).div(10));
+            uint256 _last = pot_.sub(pot_.mul(8).div(10));
+            com_.transfer(_last);
             emit BuyCore(round_,_luckyTokenId,_luckyAddr);
             endRound();
         }
@@ -187,7 +189,9 @@ contract onypay{
         return _tokenid;
      }
      
+     event EndRount(uint256 _pot,uint256 _rnd);
      function endRound() private{
+        emit EndRount(pot_,round_);
         round_ = round_.add(1);
         pot_ = 0;
      }
@@ -203,6 +207,10 @@ contract onypay{
         uint256 _curLength = rndTokenIds_[_rnd].length;
 
         return (_rnd,_curLength,pot_);
+     }
+     
+     function getplyrTokenIdByAdde(address _plyer)view public returns(uint256[]) {
+         return plyrRnds_[round_][_plyer];
      }
      
 }
